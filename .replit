@@ -2,3 +2,10 @@ modules = ["python-3.11"]
 
 [deployment]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[nix]
+packages = ["mysql-client"]
