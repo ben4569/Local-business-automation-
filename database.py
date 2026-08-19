@@ -9,33 +9,7 @@ from mysql.connector import Error, IntegrityError
 
 load_dotenv()
 
-BUSINESS_TYPES = [
-    "Grocery",
-    "Clothing",
-    "Electronics",
-    "Pharmacy",
-    "Restaurant",
-    "Other"
-]
 
-import = [
-    "INR",
-    "USD",
-    "AED"
-]
-
-REQUIRED_CSV_COLUMNS = {
-    "product_name",
-    "purchase_price",
-    "selling_price",
-    "stock"
-}
-
-OPTIONAL_CSV_COLUMNS = {
-    "category",
-    "minimum_stock",
-    "supplier"
-}
 class DatabaseError(RuntimeError):
     pass
 
