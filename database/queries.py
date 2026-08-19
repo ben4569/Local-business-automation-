@@ -126,3 +126,40 @@ def get_product(product_id, user_id):
     db.close()
 
     return product
+def update_product(user_id, product_id, name, category, price, cost, quantity):
+    db = get_db()
+
+    db.execute(
+        """
+        UPDATE products
+        SET name = ?,
+            category = ?,
+            price = ?,
+            cost = ?,
+            quantity = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        AND user_id = ?
+        """,
+        (name, category, price, cost, quantity, product_id, user_id)
+    )
+
+    db.commit()
+    db.close()
+
+
+def delete_product(user_id, product_id):
+    db = get_db()
+
+    db.execute(
+        """
+        DELETE FROM products
+        WHERE id = ?
+        AND user_id = ?
+        """,
+        (product_id, user_id)
+    )
+
+    db.commit()
+    db.close()
+    
