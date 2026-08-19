@@ -1,33 +1,126 @@
+CREATE DATABASE IF NOT EXISTS shopsight
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+USE shopsight;
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    name TEXT,
-    onboarding_completed BOOLEAN DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    auth_token TEXT UNIQUE
-    
-);
-
-CREATE TABLE IF NOT EXISTS onboarding (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    business_name TEXT,
-    business_type TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS businesses (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    business_name VARCHAR(255) NOT NULL,
+    business_type VARCHAR(100) NOT NULL,
+    years_in_operation INT UNSIGNED NOT NULL DEFAULT 0,
+    currency CHAR(3) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_businesses_user (user_id),
+    KEY idx_businesses_user_id (user_id),
+    CONSTRAINT fk_businesses_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    business_id BIGINT UNSIGNED NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_categories_business_name (business_id, name),
+    KEY idx_categories_business_id (business_id),
+    CONSTRAINT fk_categories_business
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS suppliers (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    business_id BIGINT UNSIGNED NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_suppliers_business_name (business_id, name),
+    KEY idx_suppliers_business_id (business_id),
+    CONSTRAINT fk_suppliers_business
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT,
-    price REAL,
-    cost REAL,
-    quantity INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    business_id BIGINT UNSIGNED NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    category_id BIGINT UNSIGNED NULL,
+    purchase_price DECIMAL(12, 2) NOT NULL,
+    selling_price DECIMAL(12, 2) NOT NULL,
+    stock DECIMAL(12, 3) NOT NULL DEFAULT 0,
+    minimum_stock DECIMAL(12, 3) NOT NULL DEFAULT 0,
+    supplier_id BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_products_business_id (business_id),
+    KEY idx_products_category_id (category_id),
+    KEY idx_products_supplier_id (supplier_id),
+    CONSTRAINT fk_products_business
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_products_category
+        FOREIGN KEY (category_id) REFERENCES categories(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_products_supplier
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS sales (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    business_id BIGINT UNSIGNED NOT NULL,
+    total_amount DECIMAL(14, 2) NOT NULL DEFAULT 0,
+    sale_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_sales_business_date (business_id, sale_date),
+    CONSTRAINT fk_sales_business
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS sale_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    sale_id BIGINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
+    quantity DECIMAL(12, 3) NOT NULL,
+    price DECIMAL(12, 2) NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_sale_items_sale_id (sale_id),
+    KEY idx_sale_items_product_id (product_id),
+    CONSTRAINT fk_sale_items_sale
+        FOREIGN KEY (sale_id) REFERENCES sales(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_sale_items_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_id BIGINT UNSIGNED NOT NULL,
+    quantity_change DECIMAL(12, 3) NOT NULL,
+    movement_type ENUM('INITIAL_STOCK', 'PURCHASE', 'SALE', 'ADJUSTMENT', 'RETURN') NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_stock_movements_product_created (product_id, created_at),
+    CONSTRAINT fk_stock_movements_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS imports (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    business_id BIGINT UNSIGNED NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    rows_imported INT UNSIGNED NOT NULL DEFAULT 0,
+    imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_imports_business_date (business_id, imported_at),
+    CONSTRAINT fk_imports_business
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
