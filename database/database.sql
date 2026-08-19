@@ -238,9 +238,7 @@ CREATE TABLE IF NOT EXISTS stock_movements (
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS imports (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-
-    business_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMEfilename business_id BIGINT UNSIGNED NOT NULL,
     filename VARCHAR(255) NOT NULL,
 
     rows_imported INT UNSIGNED NOT NULL DEFAULT 0,
