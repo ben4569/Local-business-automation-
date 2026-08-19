@@ -24,6 +24,21 @@ def get_user_by_id(user_id):
     ).fetchone()
     db.close()
     return user
+def get_user_by_email(email):
+    db = get_db()
+
+    user = db.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE email = ?
+        """,
+        (email,)
+    ).fetchone()
+
+    db.close()
+
+    return user
 def save_onboarding(user_id, business_name, business_type):
     db = get_db()
     existing = db.execute(
@@ -162,4 +177,98 @@ def delete_product(user_id, product_id):
 
     db.commit()
     db.close()
-    
+def update_auth_token(user_id, auth_token):
+    db = get_db()
+
+    db.execute(
+        """
+        UPDATE users
+        SET auth_token = ?
+        WHERE id = ?
+        """,
+        (auth_token, user_id)
+    )
+
+    db.commit()
+    db.close()
+
+
+def get_user_by_token(auth_token):
+    db = get_db()
+
+    user = db.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE auth_token = ?
+        """,
+        (auth_token,)
+    ).fetchone()
+
+    db.close()
+def save_onboarding(user_id, business_name, business_type):
+    db = get_db()
+
+    existing = db.execute(
+        """
+        SELECT id
+        FROM onboarding
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    ).fetchone()
+
+    if existing:
+        db.execute(
+            """
+            UPDATE onboarding
+            SET business_name = ?,
+                business_type = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            """,
+            (business_name, business_type, user_id)
+        )
+    else:
+        db.execute(
+            """
+            INSERT INTO onboarding (
+                user_id,
+                business_name,
+                business_type
+            )
+            VALUES (?, ?, ?)
+            """,
+            (user_id, business_name, business_type)
+        )
+
+    db.execute(
+        """
+        UPDATE users
+        SET onboarding_completed = 1
+        WHERE id = ?
+        """,
+        (user_id,)
+    )
+
+    db.commit()
+    db.close()
+
+
+def get_onboarding(user_id):
+    db = get_db()
+
+    onboarding = db.execute(
+        """
+        SELECT *
+        FROM onboarding
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    ).fetchone()
+
+    db.close()
+
+    return onboarding
+
+    return user
